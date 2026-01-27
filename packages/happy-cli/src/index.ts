@@ -622,6 +622,9 @@ ${chalk.bold('To clean up runaway processes:')} Use ${chalk.cyan('happy doctor c
         console.warn(chalk.yellow(`   Your settings file "${settingsValue}" will be ignored.`))
         console.warn(chalk.yellow(`   To configure Claude, edit ~/.claude/settings.json instead.`))
         // Don't pass through to claudeArgs
+      } else if (arg === '--new' || arg === '-n') {
+        // Force new session, ignoring saved session state
+        options.forceNewSession = true
       } else {
         // Pass unknown arguments through to claude
         unknownArgs.push(arg)
@@ -664,8 +667,9 @@ ${chalk.bold('Usage:')}
   happy doctor            System diagnostics & troubleshooting
 
 ${chalk.bold('Examples:')}
-  happy                    Start session
+  happy                    Start session (auto-resumes if previous exists)
   happy resume cmmij8      Resume a previous session by Happy session ID
+  happy --new              Force new session (ignore saved state)
   happy --yolo             Start with bypassing permissions
                             happy sugar for --dangerously-skip-permissions
   happy --chrome           Enable Chrome browser access for this session
