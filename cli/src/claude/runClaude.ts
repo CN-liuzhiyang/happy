@@ -27,6 +27,8 @@ import { startOfflineReconnection, connectionState } from '@/utils/serverConnect
 import { claudeLocal } from '@/claude/claudeLocal';
 import { createSessionScanner } from '@/claude/utils/sessionScanner';
 import { Session } from './session';
+import { loadSessionForDirectory, saveCurrentSession, encodeBase64, decodeBase64, formatTimeAgo, touchSession, removeSession, SavedSession } from '@/sessionPersistence';
+import { claudeCheckSession } from '@/claude/utils/claudeCheckSession';
 
 /** JavaScript runtime to use for spawning Claude Code */
 export type JsRuntime = 'node' | 'bun'
@@ -41,13 +43,42 @@ export interface StartOptions {
     startedBy?: 'daemon' | 'terminal'
     /** JavaScript runtime to use for spawning Claude Code (default: 'node') */
     jsRuntime?: JsRuntime
+    /** Force new session, ignoring any saved session state */
+    forceNewSession?: boolean
 }
 
 export async function runClaude(credentials: Credentials, options: StartOptions = {}): Promise<void> {
     logger.debug(`[CLAUDE] ===== CLAUDE MODE STARTING =====`);
     logger.debug(`[CLAUDE] This is the Claude agent, NOT Gemini`);
-    
+
     const workingDirectory = process.cwd();
+
+    // Try to load saved session state for auto-resume
+    let savedSession: SavedSession | null = null;
+    let shouldResumeClaudeSession = false;
+
+    if (!options.forceNewSession) {
+        savedSession = await loadSessionForDirectory(workingDirectory);
+
+        if (savedSession) {
+            // Verify Claude session file still exists
+            const claudeSessionValid = claudeCheckSession(savedSession.claudeSessionId, workingDirectory);
+
+            if (claudeSessionValid) {
+                shouldResumeClaudeSession = true;
+                logger.debug(`[CLAUDE] Found valid saved session: ${savedSession.claudeSessionId}`);
+                console.log(`✓ Resumed previous session (${formatTimeAgo(savedSession.lastActiveAt)})`);
+            } else {
+                // Claude session file doesn't exist anymore, clean up
+                logger.debug(`[CLAUDE] Saved session ${savedSession.claudeSessionId} no longer valid, removing`);
+                await removeSession(workingDirectory);
+                savedSession = null;
+            }
+        }
+    } else {
+        logger.debug(`[CLAUDE] forceNewSession=true, skipping session restoration`);
+    }
+
     const sessionTag = randomUUID();
 
     // Log environment info at startup
@@ -193,7 +224,7 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
     const hookServer = await startHookServer({
         onSessionHook: (sessionId, data) => {
             logger.debug(`[START] Session hook received: ${sessionId}`, data);
-            
+
             // Update session ID in the Session instance
             if (currentSession) {
                 const previousSessionId = currentSession.sessionId;
@@ -202,6 +233,21 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
                     currentSession.onSessionFound(sessionId);
                 }
             }
+
+            // Save session state for future restoration
+            saveCurrentSession({
+                claudeSessionId: sessionId,
+                serverSessionId: response.id,
+                serverSessionTag: sessionTag,
+                encryptionKey: encodeBase64(response.encryptionKey),
+                encryptionVariant: response.encryptionVariant,
+                workingDirectory,
+                lastActiveAt: Date.now(),
+                metadataVersion: response.metadataVersion,
+                agentStateVersion: response.agentStateVersion,
+            }).catch(err => {
+                logger.debug(`[START] Failed to save session state: ${err.message}`);
+            });
         }
     });
     logger.debug(`[START] Hook server started on port ${hookServer.port}`);
@@ -427,6 +473,20 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
 
     registerKillSessionHandler(session.rpcHandlerManager, cleanup);
 
+    // Prepare claudeArgs with --resume if restoring a session
+    let effectiveClaudeArgs = options.claudeArgs ? [...options.claudeArgs] : [];
+    if (shouldResumeClaudeSession && savedSession) {
+        // Check if --resume or --continue is already in args (user explicitly passed it)
+        const hasResumeFlag = effectiveClaudeArgs.includes('--resume') || effectiveClaudeArgs.includes('-r');
+        const hasContinueFlag = effectiveClaudeArgs.includes('--continue') || effectiveClaudeArgs.includes('-c');
+
+        if (!hasResumeFlag && !hasContinueFlag) {
+            // Add --resume with saved session ID
+            effectiveClaudeArgs.push('--resume', savedSession.claudeSessionId);
+            logger.debug(`[CLAUDE] Added --resume ${savedSession.claudeSessionId} for session restoration`);
+        }
+    }
+
     // Create claude loop
     await loop({
         path: workingDirectory,
@@ -442,6 +502,10 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
                 ...currentState,
                 controlledByUser: newMode === 'local'
             }));
+            // Update lastActiveAt on mode change
+            touchSession(workingDirectory).catch(err => {
+                logger.debug(`[CLAUDE] Failed to touch session: ${err.message}`);
+            });
         },
         onSessionReady: (sessionInstance) => {
             // Store reference for hook server callback
@@ -455,7 +519,7 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
         },
         session,
         claudeEnvVars: options.claudeEnvVars,
-        claudeArgs: options.claudeArgs,
+        claudeArgs: effectiveClaudeArgs,
         hookSettingsPath,
         jsRuntime: options.jsRuntime
     });

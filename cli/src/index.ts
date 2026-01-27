@@ -513,6 +513,9 @@ ${chalk.bold('To clean up runaway processes:')} Use ${chalk.cyan('happy doctor c
           console.error(chalk.red(`Invalid --claude-env format: ${envArg}. Expected KEY=VALUE`))
           process.exit(1)
         }
+      } else if (arg === '--new' || arg === '-n') {
+        // Force new session, ignoring saved session state
+        options.forceNewSession = true
       } else {
         // Pass unknown arguments through to claude
         unknownArgs.push(arg)
@@ -545,7 +548,8 @@ ${chalk.bold('Usage:')}
   happy doctor            System diagnostics & troubleshooting
 
 ${chalk.bold('Examples:')}
-  happy                    Start session
+  happy                    Start session (auto-resumes if previous exists)
+  happy --new              Force new session (ignore saved state)
   happy --yolo             Start with bypassing permissions
                             happy sugar for --dangerously-skip-permissions
   happy --js-runtime bun   Use bun instead of node to spawn Claude Code
