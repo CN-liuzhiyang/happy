@@ -129,6 +129,7 @@ export async function claudeRemote(opts: {
         canCallTool: (toolName: string, input: unknown, options: { signal: AbortSignal; toolUseID: string }) => opts.canCallTool(toolName, input, mode, options),
         abort: opts.signal,
         settingsPath: opts.hookSettingsPath,
+        maxThinkingTokens: 31999,
     }
 
     // Track thinking state
