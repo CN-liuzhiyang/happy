@@ -107,7 +107,7 @@ export function spawnHappyCLI(args: string[], options: SpawnOptions = {}): Child
   // on Windows no longer falls back to appending `.exe`, producing ENOENT
   // even when node is on PATH (issue #1082).
   return crossSpawn(runtime, nodeArgs, {
-    windowsHide: true,
     ...options,
+    windowsHide: true,
   });
 }
