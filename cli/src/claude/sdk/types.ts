@@ -175,6 +175,8 @@ export interface QueryOptions {
     canCallTool?: CanCallToolCallback
     /** Path to a settings JSON file to pass to Claude via --settings */
     settingsPath?: string
+    /** Maximum thinking tokens for extended thinking output */
+    maxThinkingTokens?: number
 }
 
 /**

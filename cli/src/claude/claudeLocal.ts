@@ -169,6 +169,9 @@ export async function claudeLocal(opts: {
         await new Promise<void>((r, reject) => {
             const args: string[] = []
 
+            // Enable thinking output
+            args.push('--max-thinking-tokens', '31999');
+
             // Session/resume args depend on whether we're in offline mode or hook mode
             if (!opts.hookSettingsPath) {
                 // Offline mode: We control session ID

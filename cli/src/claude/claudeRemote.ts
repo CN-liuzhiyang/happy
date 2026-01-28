@@ -131,6 +131,7 @@ export async function claudeRemote(opts: {
             return resolve(join(projectPath(), 'scripts', 'claude_remote_launcher.cjs'));
         })(),
         settingsPath: opts.hookSettingsPath,
+        maxThinkingTokens: 31999,
     }
 
     // Track thinking state

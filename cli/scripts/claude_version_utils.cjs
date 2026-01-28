@@ -480,7 +480,7 @@ function getClaudeCliPath() {
 function runClaudeCli(cliPath) {
     const { pathToFileURL } = require('url');
     const { spawn } = require('child_process');
-    
+
     // Check if it's a JavaScript file (.js or .cjs) or a binary file
     const isJsFile = cliPath.endsWith('.js') || cliPath.endsWith('.cjs');
 

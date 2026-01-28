@@ -274,7 +274,8 @@ export function query(config: {
             fallbackModel,
             strictMcpConfig,
             canCallTool,
-            settingsPath
+            settingsPath,
+            maxThinkingTokens
         } = {}
     } = config
 
@@ -285,6 +286,9 @@ export function query(config: {
 
     // Build command arguments
     const args = ['--output-format', 'stream-json', '--verbose']
+
+    // Enable thinking output
+    if (maxThinkingTokens) args.push('--max-thinking-tokens', maxThinkingTokens.toString())
 
     if (customSystemPrompt) args.push('--system-prompt', customSystemPrompt)
     if (appendSystemPrompt) args.push('--append-system-prompt', appendSystemPrompt)
