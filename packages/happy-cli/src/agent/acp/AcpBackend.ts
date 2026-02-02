@@ -402,6 +402,7 @@ export class AcpBackend implements AgentBackend {
           // Use 'pipe' for all stdio to capture output without printing to console
           // stdout and stderr will be handled by our event listeners
           stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
         });
       }
       
