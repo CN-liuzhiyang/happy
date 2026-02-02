@@ -233,6 +233,7 @@ export async function claudeLocal(opts: {
                 signal: opts.abort,
                 cwd: opts.path,
                 env,
+                windowsHide: true,
             });
 
             // Listen to the custom fd (fd 3) for thinking state tracking
