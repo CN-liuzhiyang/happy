@@ -20,7 +20,7 @@ const DEFAULT_TIMEOUT = 14 * 24 * 60 * 60 * 1000; // 14 days, which is the half 
  */
 function getCodexMcpCommand(): string | null {
     try {
-        const version = execSync('codex --version', { encoding: 'utf8' }).trim();
+        const version = execSync('codex --version', { encoding: 'utf8', windowsHide: true }).trim();
         const match = version.match(/codex-cli\s+(\d+\.\d+\.\d+(?:-alpha\.\d+)?)/);
         if (!match) {
             logger.debug('[CodexMCP] Could not parse codex version:', version);

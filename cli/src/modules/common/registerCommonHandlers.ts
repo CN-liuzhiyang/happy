@@ -168,6 +168,7 @@ export function registerCommonHandlers(rpcHandlerManager: RpcHandlerManager, wor
             const options: ExecOptions = {
                 cwd: data.cwd === '/' ? undefined : data.cwd,
                 timeout: data.timeout || 30000, // Default 30 seconds timeout
+                windowsHide: true,
             };
 
             logger.debug('Shell command executing...', { cwd: options.cwd, timeout: options.timeout });
