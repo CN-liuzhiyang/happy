@@ -312,7 +312,8 @@ export class PermissionHandler {
      * Resets all state for new sessions
      */
     reset(): void {
-        this.responses.clear();
+        this.toolCalls = [];
+        this.responses = new Map();
         this.allowedTools.clear();
         this.allowedBashLiterals.clear();
         this.allowedBashPrefixes.clear();

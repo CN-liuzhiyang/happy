@@ -247,6 +247,7 @@ export async function claudeRemote(opts: {
                     for (let c of msg.message.content) {
                         if (c.type === 'tool_result' && c.tool_use_id && opts.isAborted(c.tool_use_id)) {
                             logger.debug('[claudeRemote] Tool aborted, exiting claudeRemote');
+                            messages.end();
                             return;
                         }
                     }
