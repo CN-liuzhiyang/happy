@@ -338,7 +338,7 @@ export class PermissionHandler {
      */
     reset(): void {
         this.toolCalls = [];
-        this.responses.clear();
+        this.responses = new Map();
         this.allowedTools.clear();
         this.allowedBashLiterals.clear();
         this.allowedBashPrefixes.clear();
