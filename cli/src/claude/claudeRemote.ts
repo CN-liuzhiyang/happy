@@ -117,7 +117,13 @@ export async function claudeRemote(opts: {
         cwd: opts.path,
         resume: startFrom ?? undefined,
         mcpServers: opts.mcpServers,
-        permissionMode: mapToClaudeMode(initial.mode.permissionMode),
+        // Use 'default' instead of 'bypassPermissions' so the subprocess sends permission
+        // requests via stdio. Our canCallTool handler manages bypassing and ExitPlanMode handling.
+        // Other modes (plan, acceptEdits, default) pass through unchanged.
+        permissionMode: (() => {
+            const mapped = mapToClaudeMode(initial.mode.permissionMode);
+            return mapped === 'bypassPermissions' ? 'default' : mapped;
+        })(),
         model: initial.mode.model,
         fallbackModel: initial.mode.fallbackModel,
         customSystemPrompt: initial.mode.customSystemPrompt ? initial.mode.customSystemPrompt + '\n\n' + systemPrompt : undefined,
