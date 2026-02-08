@@ -179,6 +179,12 @@ export class PermissionHandler {
         }
 
         if (this.permissionMode === 'bypassPermissions') {
+            // ExitPlanMode needs special handling even in bypassPermissions mode:
+            // inject PLAN_FAKE_RESTART so the session loop restarts correctly
+            if (descriptor.exitPlan) {
+                this.session.queue.unshift(PLAN_FAKE_RESTART, { permissionMode: 'bypassPermissions' });
+                return { behavior: 'deny', message: PLAN_FAKE_REJECT };
+            }
             return { behavior: 'allow', updatedInput: input as Record<string, unknown> };
         }
 
