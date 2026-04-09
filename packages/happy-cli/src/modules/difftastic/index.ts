@@ -45,7 +45,6 @@ export function run(args: string[], options?: DifftasticOptions): Promise<Diffta
                 // Force color output when needed
                 FORCE_COLOR: '1'
             },
-            windowsHide: true,
         });
 
         let stdout = '';
